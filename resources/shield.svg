@@ -1,0 +1,26 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shield outline -->
+  <path d="M64 8 L20 24 L20 58 Q20 86 64 116 Q108 86 108 58 L108 24 Z" 
+        fill="none" 
+        stroke="#00A896" 
+        stroke-width="4"/>
+  
+  <!-- Shield fill -->
+  <path d="M64 14 L26 28 L26 58 Q26 82 64 108 Q102 82 102 58 L102 28 Z" 
+        fill="#00A896" 
+        opacity="0.2"/>
+  
+  <!-- Lock icon in center -->
+  <rect x="52" y="54" width="24" height="20" rx="2" fill="#00A896"/>
+  <path d="M56 54 L56 48 Q56 42 64 42 Q72 42 72 48 L72 54" 
+        fill="none" 
+        stroke="#00A896" 
+        stroke-width="3"/>
+  
+  <!-- Check mark -->
+  <path d="M52 62 L58 68 L76 50" 
+        fill="none" 
+        stroke="white" 
+        stroke-width="3" 
+        stroke-linecap="round"/>
+</svg>

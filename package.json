@@ -1,0 +1,158 @@
+{
+  "name": "olivex",
+  "displayName": "OliveX Security",
+  "description": "0xHunter integration for automated vulnerability fixing with Claude Code",
+  "version": "0.1.0",
+  "publisher": "olivex-security",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/olivex-security/olivex-vscode"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other",
+    "Testing"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:olivex.configure",
+    "onCommand:olivex.pullBugs",
+    "onView:olivexBugs"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "olivex.configure",
+        "title": "OliveX: Configure 0xHunter Credentials",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "olivex.pullBugs",
+        "title": "OliveX: Pull Bugs from 0xHunter",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "olivex.refreshBugs",
+        "title": "OliveX: Refresh Bug List",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "olivex.fixBug",
+        "title": "OliveX: Fix Bug with Claude Code",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "olivex.viewBugDetail",
+        "title": "OliveX: View Bug Details",
+        "icon": "$(info)"
+      },
+      {
+        "command": "olivex.markFixed",
+        "title": "OliveX: Mark as Fixed",
+        "icon": "$(check)"
+      },
+      {
+        "command": "olivex.openInBrowser",
+        "title": "OliveX: Open in 0xHunter",
+        "icon": "$(link-external)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "olivex",
+          "title": "OliveX Security",
+          "icon": "resources/shield.svg"
+        }
+      ]
+    },
+    "views": {
+      "olivex": [
+        {
+          "id": "olivexBugs",
+          "name": "Security Vulnerabilities"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "olivex.configure",
+          "when": "view == olivexBugs",
+          "group": "navigation@1"
+        },
+        {
+          "command": "olivex.refreshBugs",
+          "when": "view == olivexBugs",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "olivex.fixBug",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "inline@1"
+        },
+        {
+          "command": "olivex.viewBugDetail",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "inline@2"
+        },
+        {
+          "command": "olivex.markFixed",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "actions@1"
+        },
+        {
+          "command": "olivex.openInBrowser",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "actions@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "OliveX Security",
+      "properties": {
+        "olivex.apiBaseUrl": {
+          "type": "string",
+          "default": "https://api.0xhunter.io",
+          "description": "0xHunter API base URL"
+        },
+        "olivex.autoRefresh": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically refresh bugs on workspace open"
+        },
+        "olivex.refreshInterval": {
+          "type": "number",
+          "default": 300,
+          "description": "Auto-refresh interval in seconds (if enabled)"
+        },
+        "olivex.statusFilter": {
+          "type": "array",
+          "default": ["Validated"],
+          "items": {
+            "type": "string",
+            "enum": ["Pending", "Validated", "Resolved", "Rejected"]
+          },
+          "description": "Filter reports by status (e.g., only show Validated reports)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^6.x",
+    "@typescript-eslint/parser": "^6.x",
+    "eslint": "^8.x",
+    "typescript": "^5.2.0"
+  }
+}
