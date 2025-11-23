@@ -51,6 +51,10 @@ export interface Bug {
   program_id?: string;
   program_title?: string;
   
+  // AI-powered insights
+  dev_explanation?: string;
+  solution_prompt?: string;
+  
   // Legacy fields for compatibility
   affectedFile?: string;
   affectedLines?: [number, number];

@@ -62,6 +62,7 @@ export class BugDetailPanel {
   public update(bug: Bug) {
     this._panel.title = `Bug: ${bug.title}`;
     this._panel.webview.html = this._getHtmlForWebview(bug);
+    // Send bug data safely via postMessage instead of inline JSON
     this._panel.webview.postMessage({ type: 'bugData', bug: bug });
   }
 
@@ -94,6 +95,7 @@ export class BugDetailPanel {
             padding: 20px;
             color: var(--vscode-foreground);
             background-color: var(--vscode-editor-background);
+            line-height: 1.6;
         }
         .header {
             border-bottom: 1px solid var(--vscode-panel-border);
@@ -195,6 +197,92 @@ export class BugDetailPanel {
             border-radius: 4px;
             font-size: 12px;
         }
+        
+        /* AI Insights Styles */
+        .ai-section {
+            background: linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(103, 58, 183, 0.1) 100%);
+            border-left: 4px solid #9c27b0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        .ai-section::before {
+            content: '🤖';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+        .ai-section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .ai-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ai-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+        .ai-content {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            padding: 15px;
+            line-height: 1.7;
+            margin-top: 10px;
+        }
+        .dev-explanation {
+            border-left-color: #2196f3;
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(3, 169, 244, 0.1) 100%);
+        }
+        .dev-explanation::before {
+            content: '👨‍💻';
+        }
+        .solution-prompt {
+            border-left-color: #4caf50;
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(139, 195, 74, 0.1) 100%);
+        }
+        .solution-prompt::before {
+            content: '💡';
+        }
+        .collapsible {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .collapsible::after {
+            content: '▼';
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+        .collapsible.collapsed::after {
+            transform: rotate(-90deg);
+        }
+        .collapsible-content {
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 1;
+        }
+        .collapsible-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+        
         .markdown-content h1,
         .markdown-content h2,
         .markdown-content h3 {
@@ -301,6 +389,34 @@ export class BugDetailPanel {
     </div>
     ` : ''}
 
+    ${bug.dev_explanation ? `
+    <div class="ai-section dev-explanation">
+        <div class="ai-section-header collapsible" onclick="toggleSection(this)">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="ai-badge">AI Insights</span>
+                <span class="ai-title">Developer Explanation</span>
+            </div>
+        </div>
+        <div class="collapsible-content">
+            <div class="ai-content markdown-content">${this._markdownToHtml(bug.dev_explanation)}</div>
+        </div>
+    </div>
+    ` : ''}
+
+    ${bug.solution_prompt ? `
+    <div class="ai-section solution-prompt">
+        <div class="ai-section-header collapsible" onclick="toggleSection(this)">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="ai-badge">Fix Guide</span>
+                <span class="ai-title">Solution Prompt</span>
+            </div>
+        </div>
+        <div class="collapsible-content">
+            <div class="ai-content markdown-content">${this._markdownToHtml(bug.solution_prompt)}</div>
+        </div>
+    </div>
+    ` : ''}
+
     <div class="section">
         <div class="section-title">Description</div>
         <div class="content markdown-content">${this._markdownToHtml(bug.description)}</div>
@@ -328,7 +444,7 @@ export class BugDetailPanel {
     ` : ''}
 
     <div class="actions">
-        <button class="primary-button" onclick="fixBug()">🛠️ Fix with Claude Code</button>
+        <button class="primary-button" onclick="fixBug()">🛠️ Fix with AI</button>
         <button class="secondary-button" onclick="markFixed()">✅ Mark as Fixed</button>
         <button class="secondary-button" onclick="openInBrowser()">🔗 Open in 0xHunter</button>
     </div>
@@ -336,12 +452,19 @@ export class BugDetailPanel {
     <script>
         const vscode = acquireVsCodeApi();
         let bug = null;
-            window.addEventListener('message', event => {
-                const message = event.data;
-                if (message.type === 'bugData') {
-                    bug = message.bug;
-                }
-            });
+        
+        window.addEventListener('message', event => {
+            const message = event.data;
+            if (message.type === 'bugData') {
+                bug = message.bug;
+            }
+        });
+
+        function toggleSection(header) {
+            header.classList.toggle('collapsed');
+            const content = header.nextElementSibling;
+            content.classList.toggle('collapsed');
+        }
 
         function fixBug() {
             vscode.postMessage({

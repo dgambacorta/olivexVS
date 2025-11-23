@@ -41,7 +41,7 @@
       },
       {
         "command": "olivex.fixBug",
-        "title": "OliveX: Fix Bug with Claude Code",
+        "title": "OliveX: Fix Bug with AI",
         "icon": "$(tools)"
       },
       {

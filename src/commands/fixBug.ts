@@ -21,13 +21,13 @@ export async function registerFixBugCommand(
           `Fix vulnerability: ${bug.title}?`,
           {
             modal: true,
-            detail: `This will:\n1. Create a context file in .olivex/\n2. Launch Claude Code to analyze and fix the vulnerability\n\nSeverity: ${(bug.severity || 'Unknown').toUpperCase()}\nAffected: ${bug.affectedFile || bug.target_url || 'Unknown'}`,
+            detail: `This will:\n1. Copy the bug details to your clipboard\n2. Open Claude Code extension\n3. You can paste (Cmd+V) the vulnerability details in Claude Code\n\nSeverity: ${(bug.severity || 'Unknown').toUpperCase()}\nAffected: ${bug.target_url || 'Unknown'}`,
           },
-          'Fix with Claude Code',
+          'Fix with AI',
           'Cancel'
         );
 
-        if (confirm !== 'Fix with Claude Code') {
+        if (confirm !== 'Fix with AI') {
           return;
         }
 

@@ -90,6 +90,12 @@ export async function registerPullBugsCommand(
             
             if (summary.total > 0) {
               vscode.window.showInformationMessage(`✅ ${message}`);
+              
+              // Abrir el primer bug automáticamente
+              if (filteredBugs.length > 0) {
+                const firstBug = filteredBugs[0];
+                vscode.commands.executeCommand('olivex.viewBugDetail', { bug: firstBug });
+              }
             } else {
               vscode.window.showInformationMessage('No bugs found. Great job! 🎉');
             }

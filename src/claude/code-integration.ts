@@ -151,46 +151,83 @@ export class ClaudeCodeBridge {
   }
 
   /**
-   * Fix bug using Claude Code
+   * Fix bug using Claude Code extension
    */
   async fixBug(bug: Bug): Promise<void> {
     try {
-      // Create context file
-      const contextFile = await this.createBugContextFile(bug);
-      const relativePath = path.relative(this.workspaceRoot, contextFile);
+      // Crear el prompt con la información del bug
+      const prompt = this.createPromptForClaude(bug);
 
-      // Create or show terminal
-      let terminal = this.findOlivexTerminal();
-      if (!terminal) {
-        terminal = vscode.window.createTerminal({
-          name: 'OliveX Security Fix',
-          cwd: this.workspaceRoot,
-        });
-      }
-      terminal.show();
+      // Copiar al portapapeles
+      await vscode.env.clipboard.writeText(prompt);
 
-      // Build Claude Code command
-      const prompt = `Fix the security vulnerability described in ${relativePath}`;
+      // Show notification con instrucciones
+      const action = await vscode.window.showInformationMessage(
+        `🛠️ Bug details copied to clipboard! Open Claude Code and paste (Cmd+V) to start fixing: ${bug.title}`,
+        'Open Context File',
+        'Got it'
+      );
       
-      // Send command to terminal
-      terminal.sendText(`claude-code "${prompt}"`);
-
-      // Show notification
-      vscode.window.showInformationMessage(
-        `🛠️ Claude Code is analyzing bug: ${bug.title}`,
-        'View Context'
-      ).then(selection => {
-        if (selection === 'View Context') {
-          vscode.workspace.openTextDocument(contextFile).then(doc => {
-            vscode.window.showTextDocument(doc);
-          });
-        }
-      });
+      if (action === 'Open Context File') {
+        // Opcionalmente, crear y abrir el archivo de contexto
+        const contextFile = await this.createBugContextFile(bug);
+        const doc = await vscode.workspace.openTextDocument(contextFile);
+        await vscode.window.showTextDocument(doc, { preview: false });
+      }
 
     } catch (error: any) {
-      vscode.window.showErrorMessage(`Failed to initiate fix: ${error.message}`);
+      console.error('Failed to copy bug details:', error);
+      vscode.window.showErrorMessage(`Failed to copy bug details: ${error.message}`);
       throw error;
     }
+  }
+
+  /**
+   * Create a concise prompt for Claude Code
+   */
+  private createPromptForClaude(bug: Bug): string {
+    const parts: string[] = [];
+
+    // Title and severity
+    parts.push(`# Security Vulnerability: ${bug.title}`);
+    parts.push(`**Severity:** ${(bug.severity || 'Unknown').toUpperCase()} ${this.getSeverityEmoji(bug.severity || '')}`);
+    parts.push('');
+
+    // Description
+    parts.push('## Description');
+    parts.push(bug.description);
+    parts.push('');
+
+    // Impact
+    if (bug.impact) {
+      parts.push('## Impact');
+      parts.push(bug.impact);
+      parts.push('');
+    }
+
+    // Target URL
+    if (bug.target_url) {
+      parts.push(`**Target URL:** ${bug.target_url}`);
+      parts.push('');
+    }
+
+    // Type/Classification
+    if (bug.type) {
+      parts.push(`**Vulnerability Type:** ${bug.type}`);
+      parts.push('');
+    }
+
+    // Instructions
+    parts.push('---');
+    parts.push('');
+    parts.push('**Please help me:**');
+    parts.push('1. Analyze this security vulnerability');
+    parts.push('2. Identify the root cause');
+    parts.push('3. Propose a secure fix that eliminates the vulnerability');
+    parts.push('4. Ensure the fix follows security best practices');
+    parts.push('');
+
+    return parts.join('\n');
   }
 
   /**
