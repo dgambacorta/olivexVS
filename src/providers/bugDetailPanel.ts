@@ -14,13 +14,31 @@ export class BugDetailPanel {
       message => {
         switch (message.command) {
           case 'fixBug':
-            vscode.commands.executeCommand('olivex.fixBug', { bug: message.bug });
+            vscode.commands.executeCommand('olivex.fixBug', message.bug);
+            break;
+          case 'fixWithClaude':
+            vscode.commands.executeCommand('olivex.fixWithClaude', message.bug);
+            break;
+          case 'generateTests':
+            vscode.commands.executeCommand('olivex.generateTests', message.bug);
+            break;
+          case 'scanSimilar':
+            vscode.commands.executeCommand('olivex.scanSimilar', message.bug);
+            break;
+          case 'generateDocs':
+            vscode.commands.executeCommand('olivex.generateDocs', message.bug);
+            break;
+          case 'runFullWorkflow':
+            vscode.commands.executeCommand('olivex.runFullWorkflow', message.bug);
+            break;
+          case 'interactiveFix':
+            vscode.commands.executeCommand('olivex.interactiveFix', message.bug);
             break;
           case 'markFixed':
-            vscode.commands.executeCommand('olivex.markFixed', { bug: message.bug });
+            vscode.commands.executeCommand('olivex.markFixed', message.bug);
             break;
           case 'openInBrowser':
-            vscode.commands.executeCommand('olivex.openInBrowser', { bug: message.bug });
+            vscode.commands.executeCommand('olivex.openInBrowser', message.bug);
             break;
         }
       },
@@ -160,24 +178,45 @@ export class BugDetailPanel {
             font-weight: bold;
             color: var(--vscode-descriptionForeground);
         }
-        .actions {
-            display: flex;
-            gap: 10px;
+        .actions-section {
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid var(--vscode-panel-border);
+        }
+        .actions-group {
+            margin-bottom: 20px;
+        }
+        .actions-group-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-descriptionForeground);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         button {
             padding: 8px 16px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
-            transition: opacity 0.2s;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         button:hover {
-            opacity: 0.8;
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
         }
         .primary-button {
             background-color: var(--vscode-button-background);
@@ -186,6 +225,18 @@ export class BugDetailPanel {
         .secondary-button {
             background-color: var(--vscode-button-secondaryBackground);
             color: var(--vscode-button-secondaryForeground);
+        }
+        .workflow-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .ai-action-button {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        .danger-button {
+            background-color: #d13438;
+            color: white;
         }
         .tag {
             display: inline-block;
@@ -443,10 +494,51 @@ export class BugDetailPanel {
     </div>
     ` : ''}
 
-    <div class="actions">
-        <button class="primary-button" onclick="fixBug()">🛠️ Fix with AI</button>
-        <button class="secondary-button" onclick="markFixed()">✅ Mark as Fixed</button>
-        <button class="secondary-button" onclick="openInBrowser()">🔗 Open in 0xHunter</button>
+    <div class="actions-section">
+        <div class="actions-group">
+            <div class="actions-group-title">Quick Actions</div>
+            <div class="actions">
+                <button class="workflow-button" onclick="runFullWorkflow()">
+                    <span>▶️</span> Run Full Workflow
+                </button>
+                <button class="primary-button" onclick="fixWithClaude()">
+                    <span>🔧</span> Fix with Claude
+                </button>
+            </div>
+        </div>
+
+        <div class="actions-group">
+            <div class="actions-group-title">AI Tools</div>
+            <div class="actions">
+                <button class="ai-action-button" onclick="generateTests()">
+                    <span>🧪</span> Generate Tests
+                </button>
+                <button class="ai-action-button" onclick="scanSimilar()">
+                    <span>🔍</span> Scan Similar
+                </button>
+                <button class="ai-action-button" onclick="generateDocs()">
+                    <span>📄</span> Generate Docs
+                </button>
+                <button class="secondary-button" onclick="interactiveFix()">
+                    <span>💬</span> Interactive Mode
+                </button>
+            </div>
+        </div>
+
+        <div class="actions-group">
+            <div class="actions-group-title">Management</div>
+            <div class="actions">
+                <button class="secondary-button" onclick="markFixed()">
+                    <span>✅</span> Mark as Fixed
+                </button>
+                <button class="secondary-button" onclick="openInBrowser()">
+                    <span>🔗</span> Open in 0xHunter
+                </button>
+                <button class="secondary-button" onclick="fixBug()">
+                    <span>📋</span> Legacy Fix (Clipboard)
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -467,24 +559,39 @@ export class BugDetailPanel {
         }
 
         function fixBug() {
-            vscode.postMessage({
-                command: 'fixBug',
-                bug: bug
-            });
+            vscode.postMessage({ command: 'fixBug', bug: bug });
+        }
+
+        function fixWithClaude() {
+            vscode.postMessage({ command: 'fixWithClaude', bug: bug });
+        }
+
+        function generateTests() {
+            vscode.postMessage({ command: 'generateTests', bug: bug });
+        }
+
+        function scanSimilar() {
+            vscode.postMessage({ command: 'scanSimilar', bug: bug });
+        }
+
+        function generateDocs() {
+            vscode.postMessage({ command: 'generateDocs', bug: bug });
+        }
+
+        function runFullWorkflow() {
+            vscode.postMessage({ command: 'runFullWorkflow', bug: bug });
+        }
+
+        function interactiveFix() {
+            vscode.postMessage({ command: 'interactiveFix', bug: bug });
         }
 
         function markFixed() {
-            vscode.postMessage({
-                command: 'markFixed',
-                bug: bug
-            });
+            vscode.postMessage({ command: 'markFixed', bug: bug });
         }
 
         function openInBrowser() {
-            vscode.postMessage({
-                command: 'openInBrowser',
-                bug: bug
-            });
+            vscode.postMessage({ command: 'openInBrowser', bug: bug });
         }
     </script>
 </body>

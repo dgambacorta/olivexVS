@@ -41,8 +41,68 @@
       },
       {
         "command": "olivex.fixBug",
-        "title": "OliveX: Fix Bug with AI",
+        "title": "OliveX: Fix Bug (Legacy - Clipboard)",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "olivex.fixWithClaude",
+        "title": "OliveX: Fix with Claude Code",
         "icon": "$(tools)"
+      },
+      {
+        "command": "olivex.generateTests",
+        "title": "OliveX: Generate Security Tests",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "olivex.scanSimilar",
+        "title": "OliveX: Scan for Similar Vulnerabilities",
+        "icon": "$(search)"
+      },
+      {
+        "command": "olivex.interactiveFix",
+        "title": "OliveX: Interactive Fix Mode",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "olivex.generateDocs",
+        "title": "OliveX: Generate Documentation",
+        "icon": "$(book)"
+      },
+      {
+        "command": "olivex.runFullWorkflow",
+        "title": "OliveX: Run Full Security Workflow",
+        "icon": "$(play-circle)"
+      },
+      {
+        "command": "olivex.quickFix",
+        "title": "OliveX: Quick Fix",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "olivex.cancelWorkflow",
+        "title": "OliveX: Cancel Workflow",
+        "icon": "$(close)"
+      },
+      {
+        "command": "olivex.viewActiveWorkflows",
+        "title": "OliveX: View Active Workflows",
+        "icon": "$(tasklist)"
+      },
+      {
+        "command": "olivex.fullSecurityAudit",
+        "title": "OliveX: Full Security Audit",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "olivex.quickSecurityScan",
+        "title": "OliveX: Quick Security Scan",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "olivex.scanForVulnType",
+        "title": "OliveX: Scan for Specific Vulnerability Type",
+        "icon": "$(search)"
       },
       {
         "command": "olivex.viewBugDetail",
@@ -58,6 +118,16 @@
         "command": "olivex.openInBrowser",
         "title": "OliveX: Open in 0xHunter",
         "icon": "$(link-external)"
+      },
+      {
+        "command": "olivex.showOutput",
+        "title": "OliveX: Show Output",
+        "icon": "$(output)"
+      },
+      {
+        "command": "olivex.processSyncQueue",
+        "title": "OliveX: Process Sync Queue",
+        "icon": "$(cloud-upload)"
       }
     ],
     "viewsContainers": {
@@ -92,7 +162,7 @@
       ],
       "view/item/context": [
         {
-          "command": "olivex.fixBug",
+          "command": "olivex.fixWithClaude",
           "when": "view == olivexBugs && viewItem == bug",
           "group": "inline@1"
         },
@@ -100,6 +170,41 @@
           "command": "olivex.viewBugDetail",
           "when": "view == olivexBugs && viewItem == bug",
           "group": "inline@2"
+        },
+        {
+          "command": "olivex.generateTests",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "ai@1"
+        },
+        {
+          "command": "olivex.scanSimilar",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "ai@2"
+        },
+        {
+          "command": "olivex.interactiveFix",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "ai@3"
+        },
+        {
+          "command": "olivex.generateDocs",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "ai@4"
+        },
+        {
+          "command": "olivex.runFullWorkflow",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "workflow@1"
+        },
+        {
+          "command": "olivex.quickFix",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "workflow@2"
+        },
+        {
+          "command": "olivex.fixBug",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "legacy@1"
         },
         {
           "command": "olivex.markFixed",
@@ -113,23 +218,59 @@
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "olivex.fixWithClaude",
+        "key": "ctrl+shift+f",
+        "mac": "cmd+shift+f",
+        "when": "view == olivexBugs && listFocus"
+      },
+      {
+        "command": "olivex.quickSecurityScan",
+        "key": "ctrl+shift+s",
+        "mac": "cmd+shift+s",
+        "when": "editorFocus"
+      },
+      {
+        "command": "olivex.runFullWorkflow",
+        "key": "ctrl+shift+w",
+        "mac": "cmd+shift+w",
+        "when": "view == olivexBugs && listFocus"
+      },
+      {
+        "command": "olivex.refreshBugs",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "view == olivexBugs"
+      },
+      {
+        "command": "olivex.fullSecurityAudit",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a"
+      }
+    ],
     "configuration": {
       "title": "OliveX Security",
       "properties": {
         "olivex.apiBaseUrl": {
           "type": "string",
           "default": "https://api.0xhunter.io",
-          "description": "0xHunter API base URL"
+          "description": "0xHunter API base URL",
+          "order": 1
         },
         "olivex.autoRefresh": {
           "type": "boolean",
           "default": false,
-          "description": "Automatically refresh bugs on workspace open"
+          "description": "Automatically refresh bugs on workspace open",
+          "order": 2
         },
         "olivex.refreshInterval": {
           "type": "number",
           "default": 300,
-          "description": "Auto-refresh interval in seconds (if enabled)"
+          "minimum": 60,
+          "maximum": 3600,
+          "description": "Auto-refresh interval in seconds (if enabled)",
+          "order": 3
         },
         "olivex.statusFilter": {
           "type": "array",
@@ -138,7 +279,97 @@
             "type": "string",
             "enum": ["Pending", "Validated", "Resolved", "Rejected"]
           },
-          "description": "Filter reports by status (e.g., only show Validated reports)"
+          "description": "Filter reports by status (e.g., only show Validated reports)",
+          "order": 4
+        },
+        "olivex.syncWithBackend": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically sync fix results and scan findings with 0xHunter",
+          "order": 5
+        },
+        "olivex.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show OliveX status in the status bar",
+          "order": 6
+        },
+        "olivex.notifications.showSuccess": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show success notifications",
+          "order": 7
+        },
+        "olivex.notifications.showProgress": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show progress notifications for long-running operations",
+          "order": 8
+        },
+        "olivex.claudeCode.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Claude Code CLI integration for automated fixes",
+          "order": 10
+        },
+        "olivex.claudeCode.allowedTools": {
+          "type": "array",
+          "default": ["Read", "Edit", "Glob", "Grep"],
+          "items": {
+            "type": "string",
+            "enum": ["Read", "Edit", "Write", "Glob", "Grep", "Bash"]
+          },
+          "description": "Tools that Claude Code can use during fix operations",
+          "order": 11
+        },
+        "olivex.claudeCode.maxTurns": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Maximum number of turns for Claude Code operations",
+          "order": 12
+        },
+        "olivex.claudeCode.timeout": {
+          "type": "number",
+          "default": 180000,
+          "minimum": 30000,
+          "maximum": 600000,
+          "description": "Timeout in milliseconds for Claude Code operations (default: 3 minutes)",
+          "order": 13
+        },
+        "olivex.claudeCode.autoApplyFixes": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically apply fixes without preview (not recommended)",
+          "order": 14
+        },
+        "olivex.scan.excludePaths": {
+          "type": "array",
+          "default": ["node_modules", "dist", "build", ".git", "vendor"],
+          "items": {
+            "type": "string"
+          },
+          "description": "Paths to exclude from security scans",
+          "order": 20
+        },
+        "olivex.scan.maxFindings": {
+          "type": "number",
+          "default": 100,
+          "minimum": 10,
+          "maximum": 500,
+          "description": "Maximum number of findings to report in a single scan",
+          "order": 21
+        },
+        "olivex.scan.defaultPatterns": {
+          "type": "array",
+          "default": ["sqli", "xss", "cmdi", "hardcoded-secrets", "path-traversal"],
+          "items": {
+            "type": "string",
+            "enum": ["sqli", "xss", "cmdi", "path-traversal", "deserialization", "hardcoded-secrets", "ssrf", "idor", "missing-auth", "weak-crypto"]
+          },
+          "description": "Default vulnerability patterns for quick scans",
+          "order": 22
         }
       }
     }
