@@ -47,7 +47,11 @@ export async function registerGenerateDocsCommand(
   cliExecutor: ClaudeCodeCLIExecutor
 ): Promise<void> {
   context.subscriptions.push(
-    vscode.commands.registerCommand('olivex.generateDocs', async (item: BugItem | Bug, fixResult?: any) => {
+    vscode.commands.registerCommand('olivex.generateDocs', async (item?: BugItem | Bug, fixResult?: any) => {
+      if (!item) {
+        vscode.window.showErrorMessage('No bug selected. Please select a bug from the tree view.');
+        return;
+      }
       const bug: Bug = 'bug' in item ? item.bug : item;
 
       if (!bug) {

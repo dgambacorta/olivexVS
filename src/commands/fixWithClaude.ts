@@ -17,8 +17,12 @@ export async function registerFixWithClaudeCommand(
   cliExecutor: ClaudeCodeCLIExecutor
 ): Promise<void> {
   context.subscriptions.push(
-    vscode.commands.registerCommand('olivex.fixWithClaude', async (item: BugItem | Bug) => {
+    vscode.commands.registerCommand('olivex.fixWithClaude', async (item?: BugItem | Bug) => {
       // Handle both BugItem from tree view and Bug directly
+      if (!item) {
+        vscode.window.showErrorMessage('No bug selected. Please select a bug from the tree view.');
+        return;
+      }
       const bug: Bug = 'bug' in item ? item.bug : item;
 
       if (!bug) {
@@ -121,7 +125,11 @@ export async function registerFixWithClaudeCommand(
 
   // Register the command to generate tests
   context.subscriptions.push(
-    vscode.commands.registerCommand('olivex.generateTests', async (item: BugItem | Bug) => {
+    vscode.commands.registerCommand('olivex.generateTests', async (item?: BugItem | Bug) => {
+      if (!item) {
+        vscode.window.showErrorMessage('No bug selected. Please select a bug from the tree view.');
+        return;
+      }
       const bug: Bug = 'bug' in item ? item.bug : item;
 
       if (!bug) {
@@ -177,7 +185,11 @@ export async function registerFixWithClaudeCommand(
 
   // Register the command to scan for similar vulnerabilities
   context.subscriptions.push(
-    vscode.commands.registerCommand('olivex.scanSimilar', async (item: BugItem | Bug) => {
+    vscode.commands.registerCommand('olivex.scanSimilar', async (item?: BugItem | Bug) => {
+      if (!item) {
+        vscode.window.showErrorMessage('No bug selected. Please select a bug from the tree view.');
+        return;
+      }
       const bug: Bug = 'bug' in item ? item.bug : item;
 
       if (!bug) {
@@ -289,7 +301,11 @@ export async function registerFixWithClaudeCommand(
 
   // Register interactive mode command
   context.subscriptions.push(
-    vscode.commands.registerCommand('olivex.interactiveFix', async (item: BugItem | Bug) => {
+    vscode.commands.registerCommand('olivex.interactiveFix', async (item?: BugItem | Bug) => {
+      if (!item) {
+        vscode.window.showErrorMessage('No bug selected. Please select a bug from the tree view.');
+        return;
+      }
       const bug: Bug = 'bug' in item ? item.bug : item;
 
       if (!bug) {

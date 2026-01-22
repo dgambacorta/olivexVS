@@ -51,7 +51,11 @@ export async function registerWorkflowCommands(
 ): Promise<void> {
   // Main workflow command
   context.subscriptions.push(
-    vscode.commands.registerCommand('olivex.runFullWorkflow', async (item: BugItem | Bug) => {
+    vscode.commands.registerCommand('olivex.runFullWorkflow', async (item?: BugItem | Bug) => {
+      if (!item) {
+        vscode.window.showErrorMessage('No bug selected. Please select a bug from the tree view.');
+        return;
+      }
       const bug: Bug = 'bug' in item ? item.bug : item;
 
       if (!bug) {
@@ -225,7 +229,11 @@ export async function registerWorkflowCommands(
 
   // Quick fix command (fix-only preset)
   context.subscriptions.push(
-    vscode.commands.registerCommand('olivex.quickFix', async (item: BugItem | Bug) => {
+    vscode.commands.registerCommand('olivex.quickFix', async (item?: BugItem | Bug) => {
+      if (!item) {
+        vscode.window.showErrorMessage('No bug selected. Please select a bug from the tree view.');
+        return;
+      }
       const bug: Bug = 'bug' in item ? item.bug : item;
 
       if (!bug) {
