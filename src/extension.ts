@@ -10,6 +10,8 @@ import { registerFixWithClaudeCommand } from './commands/fixWithClaude';
 import { registerGenerateDocsCommand } from './commands/generateDocs';
 import { registerWorkflowCommands } from './commands/runFullWorkflow';
 import { registerBatchScanCommands } from './commands/batchScan';
+import { registerSecurityReviewCommands } from './commands/securityReview';
+import { registerBundleContextCommands } from './commands/bundleContext';
 import { registerMarkFixedCommand } from './commands/markFixed';
 import { registerViewBugDetailCommand } from './commands/viewBugDetail';
 import { registerOpenInBrowserCommand } from './commands/openInBrowser';
@@ -84,6 +86,9 @@ export function activate(context: vscode.ExtensionContext) {
   registerOpenInBrowserCommand(context, configManager);
   registerMarkFixedCommand(context, configManager, treeProvider);
 
+  // Register bundle context commands (don't require workspace)
+  registerBundleContextCommands(context);
+
   if (claudeBridge && cliExecutor && sessionManager) {
     // Register legacy fix command (clipboard mode)
     registerFixBugCommand(context, claudeBridge);
@@ -93,6 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
     registerGenerateDocsCommand(context, cliExecutor);
     registerWorkflowCommands(context, cliExecutor, sessionManager);
     registerBatchScanCommands(context, cliExecutor);
+    registerSecurityReviewCommands(context, cliExecutor);
 
     // Add CLI executor and session manager to subscriptions for cleanup
     context.subscriptions.push({ dispose: () => cliExecutor.dispose() });
@@ -124,7 +130,11 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.registerCommand('olivex.viewActiveWorkflows', noWorkspaceHandler),
       vscode.commands.registerCommand('olivex.fullSecurityAudit', noWorkspaceHandler),
       vscode.commands.registerCommand('olivex.quickSecurityScan', noWorkspaceHandler),
-      vscode.commands.registerCommand('olivex.scanForVulnType', noWorkspaceHandler)
+      vscode.commands.registerCommand('olivex.scanForVulnType', noWorkspaceHandler),
+      vscode.commands.registerCommand('olivex.securityReview', noWorkspaceHandler),
+      vscode.commands.registerCommand('olivex.securityReviewAndFix', noWorkspaceHandler),
+      vscode.commands.registerCommand('olivex.securityReviewFolder', noWorkspaceHandler),
+      vscode.commands.registerCommand('olivex.securityReviewFile', noWorkspaceHandler)
     );
   }
 

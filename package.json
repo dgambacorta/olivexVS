@@ -128,6 +128,36 @@
         "command": "olivex.processSyncQueue",
         "title": "OliveX: Process Sync Queue",
         "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "olivex.securityReview",
+        "title": "OliveX: Security Review (Current File)",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "olivex.securityReviewAndFix",
+        "title": "OliveX: Security Review & Auto-Fix",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "olivex.securityReviewFolder",
+        "title": "OliveX: Security Review (Folder)",
+        "icon": "$(folder-active)"
+      },
+      {
+        "command": "olivex.securityReviewFile",
+        "title": "OliveX: Security Review File",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "olivex.bundleSecurityContext",
+        "title": "OliveX: Bundle Security Context to Project",
+        "icon": "$(package)"
+      },
+      {
+        "command": "olivex.updateClaudeMd",
+        "title": "OliveX: Update CLAUDE.md with Security Rules",
+        "icon": "$(edit)"
       }
     ],
     "viewsContainers": {
@@ -216,6 +246,31 @@
           "when": "view == olivexBugs && viewItem == bug",
           "group": "actions@2"
         }
+      ],
+      "explorer/context": [
+        {
+          "command": "olivex.securityReviewFile",
+          "when": "resourceScheme == file",
+          "group": "olivex@1"
+        },
+        {
+          "command": "olivex.securityReviewFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "olivex@1"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "olivex.securityReview",
+          "when": "editorFocus",
+          "group": "olivex@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "olivex.securityReviewFile",
+          "when": "false"
+        }
       ]
     },
     "keybindings": [
@@ -247,6 +302,17 @@
         "command": "olivex.fullSecurityAudit",
         "key": "ctrl+shift+a",
         "mac": "cmd+shift+a"
+      },
+      {
+        "command": "olivex.securityReview",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r",
+        "when": "editorFocus"
+      },
+      {
+        "command": "olivex.bundleSecurityContext",
+        "key": "ctrl+alt+b",
+        "mac": "cmd+alt+b"
       }
     ],
     "configuration": {
