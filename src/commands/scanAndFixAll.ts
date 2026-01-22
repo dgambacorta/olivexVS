@@ -1,10 +1,54 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { Bug } from '../types';
 import { ClaudeCodeCLIExecutor } from '../claude/cli-executor';
 import { ScanResultsPanel, ScanFinding } from '../providers/scanResultsPanel';
 import { FixPreviewPanel } from '../providers/fixPreviewPanel';
 import { getPatternsByType, VULNERABILITY_PATTERNS } from '../claude/vulnerability-patterns';
 import { securitySystemPrompt, getVulnerabilityExamples } from '../claude/prompts/fix-prompt';
+
+/**
+ * Select workspace folder to scan
+ * Returns the selected folder path or undefined if cancelled
+ */
+async function selectWorkspaceFolder(): Promise<string | undefined> {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    vscode.window.showErrorMessage('No workspace folder open');
+    return undefined;
+  }
+
+  // Single folder - use it directly
+  if (workspaceFolders.length === 1) {
+    return workspaceFolders[0].uri.fsPath;
+  }
+
+  // Multiple folders - let user choose
+  const folderItems = workspaceFolders.map(folder => ({
+    label: folder.name,
+    description: folder.uri.fsPath,
+    folderPath: folder.uri.fsPath,
+  }));
+
+  // Add option to scan all
+  folderItems.push({
+    label: '$(files) Scan All Workspaces',
+    description: 'Scan all open folders',
+    folderPath: '__ALL__',
+  });
+
+  const selected = await vscode.window.showQuickPick(folderItems, {
+    placeHolder: 'Select folder to scan for vulnerabilities',
+    title: 'Choose Target Folder',
+  });
+
+  if (!selected) {
+    return undefined;
+  }
+
+  return selected.folderPath;
+}
 
 /**
  * Result from scanning and fixing
@@ -260,9 +304,19 @@ export async function registerScanAndFixAllCommand(
 
       const vulnType = bug.type || extractVulnType(bug.title) || 'vulnerability';
 
+      // Select folder to scan
+      const targetFolder = await selectWorkspaceFolder();
+      if (!targetFolder) {
+        return;
+      }
+
+      const folderName = targetFolder === '__ALL__'
+        ? 'all workspaces'
+        : path.basename(targetFolder);
+
       // Confirm with user
       const confirm = await vscode.window.showWarningMessage(
-        `This will scan the entire project for "${vulnType}" vulnerabilities and offer to fix all instances. Continue?`,
+        `Scan "${folderName}" for "${vulnType}" vulnerabilities and fix all instances?`,
         'Scan & Fix',
         'Cancel'
       );
@@ -271,7 +325,7 @@ export async function registerScanAndFixAllCommand(
         return;
       }
 
-      await runScanAndFixAll(context, cliExecutor, bug);
+      await runScanAndFixAll(context, cliExecutor, bug, targetFolder);
     })
   );
 
@@ -291,7 +345,13 @@ export async function registerScanAndFixAllCommand(
         return;
       }
 
-      await runScanOnly(context, cliExecutor, bug);
+      // Select folder to scan
+      const targetFolder = await selectWorkspaceFolder();
+      if (!targetFolder) {
+        return;
+      }
+
+      await runScanOnly(context, cliExecutor, bug, targetFolder);
     })
   );
 }
@@ -302,57 +362,90 @@ export async function registerScanAndFixAllCommand(
 async function runScanAndFixAll(
   context: vscode.ExtensionContext,
   cliExecutor: ClaudeCodeCLIExecutor,
-  bug: Bug
+  bug: Bug,
+  targetFolder: string
 ): Promise<void> {
   const vulnType = bug.type || extractVulnType(bug.title) || 'vulnerability';
+  const folderName = targetFolder === '__ALL__' ? 'all workspaces' : path.basename(targetFolder);
+
+  // If scanning all, we'll iterate through each workspace
+  const foldersToScan = targetFolder === '__ALL__'
+    ? (vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath) || [])
+    : [targetFolder];
 
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: `Scan & Fix: ${vulnType}`,
+      title: `Scan & Fix: ${vulnType} in ${folderName}`,
       cancellable: true,
     },
     async (progress, token) => {
       // Step 1: Scan for all instances
-      progress.report({ message: 'Scanning project for vulnerabilities...', increment: 0 });
+      progress.report({ message: `Scanning ${folderName} for vulnerabilities...`, increment: 0 });
 
       const scanPrompt = buildScanForVulnTypePrompt(bug);
 
-      let scanResult;
-      try {
-        scanResult = await cliExecutor.execute<{
-          scan_summary: { vulnerability_type: string; files_scanned: number; instances_found: number };
-          findings: Array<{
-            id: string;
-            file_path: string;
-            line_number: number;
-            code_snippet: string;
-            severity: string;
-            context?: string;
-          }>;
-        }>({
-          prompt: scanPrompt,
-          outputFormat: 'json',
-          appendSystemPrompt: securitySystemPrompt,
-          allowedTools: ['Read', 'Glob', 'Grep'],
-          maxTurns: 20,
-          timeout: 300000, // 5 minutes for scanning
-        });
-      } catch (error: any) {
-        vscode.window.showErrorMessage(`Scan failed: ${error.message}`);
-        return;
+      let allFindings: Array<{
+        id: string;
+        file_path: string;
+        line_number: number;
+        code_snippet: string;
+        severity: string;
+        context?: string;
+      }> = [];
+
+      let totalFilesScanned = 0;
+
+      // Scan each folder
+      for (const folder of foldersToScan) {
+        if (token.isCancellationRequested) break;
+
+        progress.report({ message: `Scanning ${path.basename(folder)}...` });
+
+        let scanResult;
+        try {
+          scanResult = await cliExecutor.execute<{
+            scan_summary: { vulnerability_type: string; files_scanned: number; instances_found: number };
+            findings: Array<{
+              id: string;
+              file_path: string;
+              line_number: number;
+              code_snippet: string;
+              severity: string;
+              context?: string;
+            }>;
+          }>({
+            prompt: scanPrompt,
+            outputFormat: 'json',
+            appendSystemPrompt: securitySystemPrompt,
+            allowedTools: ['Read', 'Glob', 'Grep'],
+            maxTurns: 20,
+            timeout: 300000,
+            workingDir: folder, // Use selected folder
+          });
+
+          if (scanResult.success && scanResult.output) {
+            const findings = scanResult.output.findings || [];
+            // Add folder prefix to file paths if scanning multiple
+            if (foldersToScan.length > 1) {
+              findings.forEach(f => {
+                if (!path.isAbsolute(f.file_path)) {
+                  f.file_path = path.join(path.basename(folder), f.file_path);
+                }
+              });
+            }
+            allFindings.push(...findings);
+            totalFilesScanned += scanResult.output.scan_summary?.files_scanned || 0;
+          }
+        } catch (error: any) {
+          console.error(`Scan failed for ${folder}:`, error);
+        }
       }
 
+      const findings = allFindings;
       if (token.isCancellationRequested) {
         return;
       }
-
-      if (!scanResult.success || !scanResult.output) {
-        vscode.window.showErrorMessage(`Scan failed: ${scanResult.error || 'Unknown error'}`);
-        return;
-      }
-
-      const findings = scanResult.output.findings || [];
 
       if (findings.length === 0) {
         vscode.window.showInformationMessage(
@@ -382,7 +475,7 @@ async function runScanAndFixAll(
         // Show in scan results panel
         const scanResults = {
           scan_summary: {
-            files_scanned: scanResult.output.scan_summary?.files_scanned || 0,
+            files_scanned: totalFilesScanned,
             total_findings: findings.length,
             patterns_checked: [vulnType],
           },
@@ -452,6 +545,7 @@ async function runScanAndFixAll(
           allowedTools: ['Read', 'Edit', 'Glob', 'Grep'],
           maxTurns: 30,
           timeout: 600000, // 10 minutes for fixing
+          workingDir: foldersToScan.length === 1 ? foldersToScan[0] : undefined,
         });
       } catch (error: any) {
         vscode.window.showErrorMessage(`Fix failed: ${error.message}`);
@@ -497,52 +591,87 @@ async function runScanAndFixAll(
 async function runScanOnly(
   context: vscode.ExtensionContext,
   cliExecutor: ClaudeCodeCLIExecutor,
-  bug: Bug
+  bug: Bug,
+  targetFolder: string
 ): Promise<void> {
   const vulnType = bug.type || extractVulnType(bug.title) || 'vulnerability';
+  const folderName = targetFolder === '__ALL__' ? 'all workspaces' : path.basename(targetFolder);
+
+  const foldersToScan = targetFolder === '__ALL__'
+    ? (vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath) || [])
+    : [targetFolder];
 
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: `Scanning for ${vulnType}...`,
+      title: `Scanning ${folderName} for ${vulnType}...`,
       cancellable: true,
     },
     async (progress, token) => {
       const scanPrompt = buildScanForVulnTypePrompt(bug);
 
-      const scanResult = await cliExecutor.execute<{
-        scan_summary: { vulnerability_type: string; files_scanned: number; instances_found: number };
-        findings: Array<{
-          id: string;
-          file_path: string;
-          line_number: number;
-          code_snippet: string;
-          severity: string;
-          context?: string;
-        }>;
-      }>({
-        prompt: scanPrompt,
-        outputFormat: 'json',
-        appendSystemPrompt: securitySystemPrompt,
-        allowedTools: ['Read', 'Glob', 'Grep'],
-        maxTurns: 20,
-        timeout: 300000,
-      });
+      let allFindings: Array<{
+        id: string;
+        file_path: string;
+        line_number: number;
+        code_snippet: string;
+        severity: string;
+        context?: string;
+      }> = [];
+      let totalFilesScanned = 0;
+
+      for (const folder of foldersToScan) {
+        if (token.isCancellationRequested) break;
+
+        progress.report({ message: `Scanning ${path.basename(folder)}...` });
+
+        try {
+          const scanResult = await cliExecutor.execute<{
+            scan_summary: { vulnerability_type: string; files_scanned: number; instances_found: number };
+            findings: Array<{
+              id: string;
+              file_path: string;
+              line_number: number;
+              code_snippet: string;
+              severity: string;
+              context?: string;
+            }>;
+          }>({
+            prompt: scanPrompt,
+            outputFormat: 'json',
+            appendSystemPrompt: securitySystemPrompt,
+            allowedTools: ['Read', 'Glob', 'Grep'],
+            maxTurns: 20,
+            timeout: 300000,
+            workingDir: folder,
+          });
+
+          if (scanResult.success && scanResult.output) {
+            const findings = scanResult.output.findings || [];
+            if (foldersToScan.length > 1) {
+              findings.forEach(f => {
+                if (!path.isAbsolute(f.file_path)) {
+                  f.file_path = path.join(path.basename(folder), f.file_path);
+                }
+              });
+            }
+            allFindings.push(...findings);
+            totalFilesScanned += scanResult.output.scan_summary?.files_scanned || 0;
+          }
+        } catch (error: any) {
+          console.error(`Scan failed for ${folder}:`, error);
+        }
+      }
 
       if (token.isCancellationRequested) {
         return;
       }
 
-      if (!scanResult.success || !scanResult.output) {
-        vscode.window.showErrorMessage(`Scan failed: ${scanResult.error || 'Unknown error'}`);
-        return;
-      }
-
-      const findings = scanResult.output.findings || [];
+      const findings = allFindings;
 
       if (findings.length === 0) {
         vscode.window.showInformationMessage(
-          `✅ No additional ${vulnType} vulnerabilities found!`
+          `✅ No additional ${vulnType} vulnerabilities found in ${folderName}!`
         );
         return;
       }
@@ -550,7 +679,7 @@ async function runScanOnly(
       // Show in panel
       const scanResults = {
         scan_summary: {
-          files_scanned: scanResult.output.scan_summary?.files_scanned || 0,
+          files_scanned: totalFilesScanned,
           total_findings: findings.length,
           patterns_checked: [vulnType],
         },
@@ -566,13 +695,13 @@ async function runScanOnly(
           context: f.context,
           recommendation: `Fix this ${vulnType} vulnerability`,
         })),
-        recommendations: [`Found ${findings.length} instances of ${vulnType}`],
+        recommendations: [`Found ${findings.length} instances of ${vulnType} in ${folderName}`],
       };
 
       ScanResultsPanel.createOrShow(context.extensionUri, scanResults, `${vulnType} Scan Results`);
 
       vscode.window.showWarningMessage(
-        `Found ${findings.length} ${vulnType} vulnerabilities`,
+        `Found ${findings.length} ${vulnType} vulnerabilities in ${folderName}`,
         'Fix All',
         'Dismiss'
       ).then(action => {
