@@ -12,6 +12,7 @@ import { registerWorkflowCommands } from './commands/runFullWorkflow';
 import { registerBatchScanCommands } from './commands/batchScan';
 import { registerSecurityReviewCommands } from './commands/securityReview';
 import { registerBundleContextCommands } from './commands/bundleContext';
+import { registerScanAndFixAllCommand } from './commands/scanAndFixAll';
 import { registerMarkFixedCommand } from './commands/markFixed';
 import { registerViewBugDetailCommand } from './commands/viewBugDetail';
 import { registerOpenInBrowserCommand } from './commands/openInBrowser';
@@ -99,6 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
     registerWorkflowCommands(context, cliExecutor, sessionManager);
     registerBatchScanCommands(context, cliExecutor);
     registerSecurityReviewCommands(context, cliExecutor);
+    registerScanAndFixAllCommand(context, cliExecutor);
 
     // Add CLI executor and session manager to subscriptions for cleanup
     context.subscriptions.push({ dispose: () => cliExecutor.dispose() });
@@ -134,7 +136,9 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.registerCommand('olivex.securityReview', noWorkspaceHandler),
       vscode.commands.registerCommand('olivex.securityReviewAndFix', noWorkspaceHandler),
       vscode.commands.registerCommand('olivex.securityReviewFolder', noWorkspaceHandler),
-      vscode.commands.registerCommand('olivex.securityReviewFile', noWorkspaceHandler)
+      vscode.commands.registerCommand('olivex.securityReviewFile', noWorkspaceHandler),
+      vscode.commands.registerCommand('olivex.scanAndFixAll', noWorkspaceHandler),
+      vscode.commands.registerCommand('olivex.scanAllSimilar', noWorkspaceHandler)
     );
   }
 

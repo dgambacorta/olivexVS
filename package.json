@@ -158,6 +158,16 @@
         "command": "olivex.updateClaudeMd",
         "title": "OliveX: Update CLAUDE.md with Security Rules",
         "icon": "$(edit)"
+      },
+      {
+        "command": "olivex.scanAndFixAll",
+        "title": "OliveX: Scan & Fix All Similar",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "olivex.scanAllSimilar",
+        "title": "OliveX: Scan All Similar (No Auto-Fix)",
+        "icon": "$(search)"
       }
     ],
     "viewsContainers": {
@@ -222,6 +232,11 @@
           "group": "ai@4"
         },
         {
+          "command": "olivex.scanAndFixAll",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "workflow@0"
+        },
+        {
           "command": "olivex.runFullWorkflow",
           "when": "view == olivexBugs && viewItem == bug",
           "group": "workflow@1"
@@ -230,6 +245,11 @@
           "command": "olivex.quickFix",
           "when": "view == olivexBugs && viewItem == bug",
           "group": "workflow@2"
+        },
+        {
+          "command": "olivex.scanAllSimilar",
+          "when": "view == olivexBugs && viewItem == bug",
+          "group": "workflow@3"
         },
         {
           "command": "olivex.fixBug",
